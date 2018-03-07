@@ -17,7 +17,7 @@ abstract class API_Request {
 		$this->username      = CENTAMAN_API_USERNAME;
 		$this->password      = CENTAMAN_API_PASSWORD;
 		$this->endpoint      = CENTAMAN_API_URL;
-		$this->logging       = false;
+		$this->logging       = true;
 		$this->args          = array();
 		$this->init();
 	}
