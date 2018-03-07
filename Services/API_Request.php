@@ -81,7 +81,7 @@ abstract class API_Request {
 			'code'     => $this->code,
 		);
 
-		error_log( var_export( $entry, 1 ), 3, '/var/log/ecommerce-errors.log' );
+		error_log( var_export( $entry, 1 ), 3, '/var/log/wordpress/ecommerce.log-pii' );
 	}
 
 	public function set_logging( bool $logging = false ) {
