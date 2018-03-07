@@ -42,6 +42,7 @@ class Ticket_Services extends API_Request {
 
 		return $this
 			->set_endpoint( 'TimedTicket' )
+			->set_logging( true )
 			->set_args( array( 'body' => wp_json_encode( $args ) ) )
 			->dispatch( 'POST' )
 			->get_response();
