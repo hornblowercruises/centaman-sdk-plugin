@@ -4,6 +4,7 @@ namespace Zao\ZCSDK\Services;
 abstract class API_Request {
 	protected $endpoint;
 	protected $args;
+	protected $logging;
 	protected $username;
 	protected $password;
 	protected $response;
@@ -16,6 +17,7 @@ abstract class API_Request {
 		$this->username      = CENTAMAN_API_USERNAME;
 		$this->password      = CENTAMAN_API_PASSWORD;
 		$this->endpoint      = CENTAMAN_API_URL;
+		$this->logging       = false;
 		$this->args          = array();
 		$this->init();
 	}
@@ -65,6 +67,25 @@ abstract class API_Request {
 		$this->response = wp_remote_retrieve_body( $request );
 		$this->code     = wp_remote_retrieve_response_code( $request );
 
+		if ( $this->logging ) {
+			$this->log_entry();
+		}
+
+		return $this;
+	}
+
+	public function log_entry() {
+		$entry = array(
+			'request'  => $this->request,
+			'response' => $this->response,
+			'code'     => $this->code,
+		);
+
+		error_log( var_export( $entry, 1 ), 3, '/var/log/ecommerce-errors.log' );
+	}
+
+	public function set_logging( bool $logging = false ) {
+		$this->logging = $logging;
 		return $this;
 	}
 
