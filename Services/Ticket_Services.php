@@ -40,6 +40,8 @@ class Ticket_Services extends API_Request {
 			// 'MobilePhone' => '',
 		) );
 
+		$args['Address']['Postalcode'] = substr( $args['Address']['Postalcode'], 0, 10 );
+
 		return $this
 			->set_endpoint( 'TimedTicket' )
 			->set_logging( true )
