@@ -28,7 +28,24 @@ class Ticket_Services extends API_Request {
 			'Address'   => array(),
 		) );
 
-		$args['Address'] = wp_parse_args( $args['Address'], array(
+		$args['Address'] = $this->validate_address( $args['Address'] );
+
+		return $this
+			->set_endpoint( 'TimedTicket' )
+			->set_logging( true )
+			->set_args( array( 'body' => wp_json_encode( $args ) ) )
+			->dispatch( 'POST' )
+			->get_response();
+	}
+
+	/**
+	 * Validates address against ill-conceived Centaman maximum string lengths.
+	 *
+	 * @param  Array $address Address array with potentially long strings
+	 * @return Array $address Address array with truncated strings
+	 */
+	public function validate_address( $address ) {
+		$address = wp_parse_args( $address, array(
 			'Street1'     => '',
 			// 'Street2'     => '',
 			'City'        => '',
@@ -40,14 +57,14 @@ class Ticket_Services extends API_Request {
 			// 'MobilePhone' => '',
 		) );
 
-		$args['Address']['Postalcode'] = substr( $args['Address']['Postalcode'], 0, 10 );
+		$address['Postalcode'] = substr( $address['Postalcode'], 0, 10 );
+		$address['Street1']    = substr( $address['Street1']   , 0, 50 );
+		$address['City']       = substr( $address['City']      , 0, 30 );
+		$address['State']      = substr( $address['State']     , 0, 30 );
+		$address['Country']    = substr( $address['Country']   , 0, 30 );
+		$address['HomePhone']  = substr( $address['HomePhone'] , 0, 20 );
 
-		return $this
-			->set_endpoint( 'TimedTicket' )
-			->set_logging( true )
-			->set_args( array( 'body' => wp_json_encode( $args ) ) )
-			->dispatch( 'POST' )
-			->get_response();
+		return apply_filters( 'centaman_validated_address_for_contact', $address, $this );
 	}
 
 	/**
