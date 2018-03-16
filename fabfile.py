@@ -124,7 +124,8 @@ def modify_mu_plugins(action=None):
     wpmu_status_path = '/var/html/website/wp-content/.disable-wpmu'
 
     if action == 'disable':
-        sudo('mkdir %s' % wpmu_status_path)
+        if not exists(wpmu_status_path):
+            sudo('mkdir %s' % wpmu_status_path)
     elif action == 'enable':
         sudo('rmdir %s' % wpmu_status_path)
 
@@ -132,8 +133,22 @@ def modify_mu_plugins(action=None):
 def modify_plugin_status(artifact_name, action=None):
     # Disable plugin to prevent HTTP 500s during deploy.
     print 'Setting plugin state:', action
+    command = '/usr/local/bin/wp --path=/var/html/website plugin %s %s' % (action, artifact_name)
     with cd('/var/html/website'):
-        run('/usr/local/bin/wp --path=/var/html/website plugin %s %s --network' % (action, artifact_name))
+        if is_multisite():
+            run(command + ' --network')
+        elif not is_multisite():
+            run(command)
+
+
+def is_multisite():
+    with cd('/var/html/website'):
+        multisite = run('/usr/local/bin/wp --path=/var/html/website config get MULTISITE', quiet=True)
+
+    if multisite.return_code == 1:
+        return False
+    else:
+        return True
 
 
 def cleanup_build_dir(temp_dir):
