@@ -28,9 +28,9 @@ class Ticket_Services extends API_Request {
 			'Address'   => array(),
 		) );
 
-		$args['FirstName'] = substr( $address['FirstName'], 0, 30 );
-		$args['LastName']  = substr( $address['LastName'] , 0, 30 );
-		$args['Email']     = substr( $address['Email']    , 0, 60 );
+		$args['FirstName'] = substr( $args['FirstName'], 0, 30 );
+		$args['LastName']  = substr( $args['LastName'] , 0, 30 );
+		$args['Email']     = substr( $args['Email']    , 0, 60 );
 		$args['Address']   = $this->validate_address( $args['Address'] );
 
 		return $this
