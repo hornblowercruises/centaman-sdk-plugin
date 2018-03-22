@@ -16,7 +16,6 @@ notifications:
 
 before_deploy:
   - pip install --user boto3
-  - rm -rf "${TRAVIS_BUILD_DIR}"/.git
 
 deploy:
 - provider: script

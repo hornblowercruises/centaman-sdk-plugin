@@ -24,8 +24,8 @@ function centaman_get_member( $member_id ) {
  * @param  [type] $id [description]
  * @return [type]     [description]
  */
-function centaman_get_timed_ticket_types( $booking_id = null ) {
-	return ( new Zao\ZCSDK\Services\Ticket_Services() )->get_tickets( $booking_id );
+function centaman_get_timed_ticket_types( $booking_id = null, $cost_rate_id = null ) {
+	return ( new Zao\ZCSDK\Services\Ticket_Services() )->get_tickets( $booking_id, $cost_rate_id );
 }
 
 /**
@@ -37,6 +37,17 @@ function centaman_get_timed_ticket_types( $booking_id = null ) {
  */
 function centaman_create_customer( $args ) {
 	return ( new \Zao\ZCSDK\Services\Ticket_Services() )->create_contact( $args );
+}
+
+/**
+ * Creates a customer Contact record.
+ * Expects an array with First Name, Last Name, Email and Address.
+ *
+ * @param  [type] $id [description]
+ * @return [type]     [description]
+ */
+function centaman_get_company_info( $args ) {
+	return ( new \Zao\ZCSDK\Services\Ticket_Services() )->get_company_info( $args );
 }
 
 function centaman_get_timed_ticket_booking_types( $booking_type_id = 0, $start = '', $end = '' ) {

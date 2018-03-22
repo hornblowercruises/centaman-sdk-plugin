@@ -8,14 +8,37 @@ class Ticket_Services extends API_Request {
 		return $this->set_endpoint( 'ticket_services' );
 	}
 
-	public function get_tickets( $booking_type = null ) {
+	public function get_tickets( $booking_type = null, $cost_rate_id = null ) {
 		$this->set_endpoint( 'TimedTicket' );
 
 		if ( ! empty( $booking_type ) ) {
 			$this->set_query_args( array( 'TimedTicketTypeId' => $booking_type ) );
 		}
 
+		if ( ! empty( $cost_rate_id ) ) {
+			$this->set_query_args( array( 'CostRateId' => $cost_rate_id ) );
+		}
+
 		return $this->dispatch( 'GET' )
+			->get_response();
+	}
+
+	public function get_company_info( $args ) {
+
+		$args = wp_parse_args( $args, array(
+			'FirstName' => '',
+			'LastName'  => '',
+			'Email'     => '',
+		) );
+
+		$args['FirstName'] = substr( $args['FirstName'], 0, 30 );
+		$args['LastName']  = substr( $args['LastName'] , 0, 30 );
+		$args['Email']     = substr( $args['Email']    , 0, 60 );
+
+		return $this
+			->set_endpoint( 'TimedTicket' )
+			->set_query_args( $args )
+			->dispatch( 'GET' )
 			->get_response();
 	}
 
@@ -30,7 +53,7 @@ class Ticket_Services extends API_Request {
 
 		$args['FirstName'] = substr( $args['FirstName'], 0, 30 );
 		$args['LastName']  = substr( $args['LastName'] , 0, 30 );
-		$args['Email']     = substr( $args['Email']    , 0, 60 );
+		$args['Email']     = substr( $args['Email']    , 0, 50 );
 		$args['Address']   = $this->validate_address( $args['Address'] );
 
 		return $this

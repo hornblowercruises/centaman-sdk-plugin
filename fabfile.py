@@ -22,14 +22,23 @@ repo_name = remote_repo_path.split('.')[0]
 
 env.forward_agent = True
 
+temp_dir = '/tmp/builds'
+s3_bucket = 'hornblower-builds'
+
 with open('fabric_config.yaml') as file:
     deploy_config = yaml.load(file)
 
-shortcode = deploy_config.get('shortcode')
 artifact_name = deploy_config.get('artifact_name')
-temp_dir = deploy_config.get('temp_dir')
-deploy_to = deploy_config.get('deploy_to')
-s3_bucket = deploy_config.get('s3_bucket')
+artifact_type = deploy_config.get('artifact_type')
+
+if artifact_type == 'plugin' or artifact_type == 'theme':
+    # if artifact type is 'plugin' or 'theme', this sets the path then adds an 's/' to the end
+    # eg /var/html/website/wp-content/plugins/
+    deploy_to = '/var/html/website/wp-content/' + artifact_type + 's/'
+elif artifact_type == 'wp-content':
+    deploy_to = '/var/html/website/'
+else:
+    abort('Incorrect setting for artifact_type: %s. Aborting.' % artifact_type)
 
 
 def _get_latest_build():
@@ -66,15 +75,15 @@ def download_build(s3_bucket, build_id, temp_dir):
 
     path_to_deployed_artifact = os.path.join(deploy_to, artifact_name)
 
-    if 'wp-content' in repo_name:
-        _wpcontent(temp_dir, build_filename, path_to_deployed_artifact)
+    if artifact_type == 'wp-content':
+        deploy_wpcontent(temp_dir, build_filename, path_to_deployed_artifact)
     else:
-        _normal(temp_dir, build_filename, path_to_deployed_artifact)
+        deploy_normal(temp_dir, build_filename, path_to_deployed_artifact)
 
-    _cleanup_build_dir()
+    cleanup_build_dir(temp_dir)
 
 
-def _wpcontent(temp_dir, build_filename, path_to_deployed_artifact):
+def deploy_wpcontent(temp_dir, build_filename, path_to_deployed_artifact):
     # The steps for deploying the `wp-content/` folder are a special case so that we don't blow away
     # the folders inside that that we're deploying separately (eg, everything in `plugins/` and `themes/`)
     with cd(temp_dir):
@@ -88,7 +97,12 @@ def _wpcontent(temp_dir, build_filename, path_to_deployed_artifact):
     sudo('echo %s > %s/.current_version' % (build_filename, path_to_deployed_artifact))
 
 
-def _normal(temp_dir, build_filename, path_to_deployed_artifact):
+def deploy_normal(temp_dir, build_filename, path_to_deployed_artifact):
+    if artifact_type == 'plugin':
+        modify_mu_plugins(action='disable')
+        modify_plugin_status(artifact_name, action='deactivate')
+        clear_wp_cache()
+
     with cd(temp_dir):
         sudo('rsync -a --delete-delay %s %s' % (artifact_name, deploy_to))
 
@@ -97,8 +111,47 @@ def _normal(temp_dir, build_filename, path_to_deployed_artifact):
     sudo('find %s -type d -exec chmod 755 {} \;' % path_to_deployed_artifact)
     sudo('echo %s > %s/.current_version' % (build_filename, path_to_deployed_artifact))
 
+    if artifact_type == 'plugin':
+        modify_plugin_status(artifact_name, action='activate')
+        modify_mu_plugins(action='enable')
 
-def _cleanup_build_dir():
+
+def modify_mu_plugins(action=None):
+    # Disable WPMU entirely during a deploy. This only applies to one or two
+    # plugins, but it's easier to just apply it to all--there's no harm in
+    # doing that. This prevents HTTP 500s during deploy.
+    print 'Setting WPMU state:', action
+    wpmu_status_path = '/var/html/website/wp-content/.disable-wpmu'
+
+    if action == 'disable':
+        if not exists(wpmu_status_path):
+            sudo('mkdir %s' % wpmu_status_path)
+    elif action == 'enable':
+        sudo('rmdir %s' % wpmu_status_path)
+
+
+def modify_plugin_status(artifact_name, action=None):
+    # Disable plugin to prevent HTTP 500s during deploy.
+    print 'Setting plugin state:', action
+    command = '/usr/local/bin/wp --path=/var/html/website plugin %s %s' % (action, artifact_name)
+    with cd('/var/html/website'):
+        if is_multisite():
+            run(command + ' --network')
+        elif not is_multisite():
+            run(command)
+
+
+def is_multisite():
+    with cd('/var/html/website'):
+        multisite = run('/usr/local/bin/wp --path=/var/html/website config get MULTISITE', quiet=True)
+
+    if multisite.return_code == 1:
+        return False
+    else:
+        return True
+
+
+def cleanup_build_dir(temp_dir):
     sudo('rm -rf %s/*' % temp_dir)
 
 
