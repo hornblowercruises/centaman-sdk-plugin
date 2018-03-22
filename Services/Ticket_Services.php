@@ -53,7 +53,7 @@ class Ticket_Services extends API_Request {
 
 		$args['FirstName'] = substr( $args['FirstName'], 0, 30 );
 		$args['LastName']  = substr( $args['LastName'] , 0, 30 );
-		$args['Email']     = substr( $args['Email']    , 0, 60 );
+		$args['Email']     = substr( $args['Email']    , 0, 50 );
 		$args['Address']   = $this->validate_address( $args['Address'] );
 
 		return $this
