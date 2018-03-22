@@ -8,11 +8,15 @@ class Ticket_Services extends API_Request {
 		return $this->set_endpoint( 'ticket_services' );
 	}
 
-	public function get_tickets( $booking_type = null ) {
+	public function get_tickets( $booking_type = null, $cost_rate_id = null ) {
 		$this->set_endpoint( 'TimedTicket' );
 
 		if ( ! empty( $booking_type ) ) {
 			$this->set_query_args( array( 'TimedTicketTypeId' => $booking_type ) );
+		}
+
+		if ( ! empty( $cost_rate_id ) ) {
+			$this->set_query_args( array( 'CostRateId' => $cost_rate_id ) );
 		}
 
 		return $this->dispatch( 'GET' )
