@@ -332,9 +332,22 @@ class Ticket_Services extends API_Request {
 		}
 
 		// (Decimal, Required) Total deposit paid for the booking including tax.
-		$request_object['TotalPaid'] = $request_object['TaxPaid'] + $request_object['BookingCost'];
+		$request_object['TotalPaid'] = self::round( $request_object['TaxPaid'] + $request_object['BookingCost'] );
 
 		return $request_object;
+	}
+
+	/**
+	 * Rounds any value with three decimals up when there is any remainder.
+	 *
+	 * For example, a value of 97.631 would round up to 97.64.
+	 * PHP's round() won't work like this, as it respects normal math rules for rounding up/down.
+	 *
+	 * @param  [type] $total [description]
+	 * @return [type]        [description]
+	 */
+	protected static function round( $total ) {
+		return ( ceil ( 100 * $total ) + ceil ( 100 * $total - ceil ( 100 * $total ) ) ) / 100;
 	}
 
 	protected static function maybe_combine_transaction_objects( $objects ) {
