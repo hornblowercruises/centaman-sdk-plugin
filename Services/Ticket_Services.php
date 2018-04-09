@@ -285,6 +285,8 @@ class Ticket_Services extends API_Request {
 		// (Decimal, Required) The total booking cost excluding tax.
 		$request_object['BookingCost'] = 0.0;
 
+		$tax_rate = 0.00;
+
 		// (Array, Required) Array of ticket items.
 		$request_object['Item'] = array();
 
@@ -316,6 +318,10 @@ class Ticket_Services extends API_Request {
 				// 'CouponCode' => '',
 			) );
 
+			if ( isset( $item['taxRate'] ) && $item['taxRate'] > 0.00 ) {
+				$tax_rate = $item['taxRate'];
+			}
+
 			// (String) This will always be null for request, It is used for response.
 			// $item['Barcode'] = '';
 			$total_tax = $item['Quantity'] * $item['TaxPaid'];
@@ -327,27 +333,18 @@ class Ticket_Services extends API_Request {
 			$request_object['Item'][] = $item;
 
 			$request_object['TotalTickets'] += $item['Quantity'];
-			$request_object['TaxPaid'] += $total_tax;
-			$request_object['BookingCost'] += $total_cost;
+			$request_object['TaxPaid']      += $total_tax;
+			$request_object['BookingCost']  += $total_cost;
+		}
+
+		if ( $tax_rate > 0.00 ) {
+			$request_object['TaxPaid'] = Utils::number_format( $request_object['BookingCost'] * $tax_rate );
 		}
 
 		// (Decimal, Required) Total deposit paid for the booking including tax.
-		$request_object['TotalPaid'] = self::round( $request_object['TaxPaid'] + $request_object['BookingCost'] );
+		$request_object['TotalPaid'] = $request_object['TaxPaid'] + $request_object['BookingCost'];
 
 		return $request_object;
-	}
-
-	/**
-	 * Rounds any value with three decimals up when there is any remainder.
-	 *
-	 * For example, a value of 97.631 would round up to 97.64.
-	 * PHP's round() won't work like this, as it respects normal math rules for rounding up/down.
-	 *
-	 * @param  [type] $total [description]
-	 * @return [type]        [description]
-	 */
-	protected static function round( $total ) {
-		return ( ceil ( 100 * $total ) + ceil ( 100 * $total - ceil ( 100 * $total ) ) ) / 100;
 	}
 
 	protected static function maybe_combine_transaction_objects( $objects ) {
@@ -386,8 +383,9 @@ class Ticket_Services extends API_Request {
 		) );
 
 		$orig['TotalTickets'] = 0;
-		$orig['TaxPaid'] = 0.0;
-		$orig['BookingCost'] = 0.0;
+		$orig['TaxPaid']      = 0.0;
+		$orig['BookingCost']  = 0.0;
+		$tax_rate             = 0.00;
 
 		$new_items = array();
 
@@ -415,16 +413,25 @@ class Ticket_Services extends API_Request {
 		}
 
 		foreach ( $new_items as $item ) {
-			$total_tax = $item['Quantity'] * $item['TaxPaid'];
+			$total_tax  = $item['Quantity'] * $item['TaxPaid'];
 			$total_cost = $item['Quantity'] * $item['ItemCost'];
 
 			$orig['TotalTickets'] += $item['Quantity'];
-			$orig['TaxPaid'] += $total_tax;
-			$orig['BookingCost'] += $total_cost;
+			$orig['TaxPaid']      += $total_tax;
+			$orig['BookingCost']  += $total_cost;
+
+			if ( isset( $item['taxRate'] ) && $item['taxRate'] > 0.00 ) {
+				$tax_rate = $item['taxRate'];
+			}
 		}
 
 		$orig['Item'] = array_values( $new_items );
-		$orig['TotalPaid'] = $orig['TaxPaid'] + $orig['BookingCost'];
+
+		if ( isset( $tax_rate ) && $tax_rate > 0.00 ) {
+			$orig['TaxPaid'] = Utils::number_format( $tax_rate * $orig['BookingCost'] );
+		}
+
+ 		$orig['TotalPaid'] = $orig['TaxPaid'] + $orig['BookingCost'];
 
 		return $orig;
 	}
