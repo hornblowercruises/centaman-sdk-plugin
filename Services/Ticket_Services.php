@@ -338,7 +338,7 @@ class Ticket_Services extends API_Request {
 		}
 
 		if ( $tax_rate > 0.00 ) {
-			$request_object['TaxPaid'] = Utils::number_format( $request_object['BookingCost'] * $tax_rate );
+			$request_object['TaxPaid'] = round( $request_object['BookingCost'] * $tax_rate, 2 );
 		}
 
 		// (Decimal, Required) Total deposit paid for the booking including tax.
@@ -428,7 +428,7 @@ class Ticket_Services extends API_Request {
 		$orig['Item'] = array_values( $new_items );
 
 		if ( isset( $tax_rate ) && $tax_rate > 0.00 ) {
-			$orig['TaxPaid'] = Utils::number_format( $tax_rate * $orig['BookingCost'] );
+			$orig['TaxPaid'] = round( $tax_rate * $orig['BookingCost'], 2 );
 		}
 
  		$orig['TotalPaid'] = $orig['TaxPaid'] + $orig['BookingCost'];
