@@ -324,7 +324,7 @@ class Ticket_Services extends API_Request {
 
 			// (String) This will always be null for request, It is used for response.
 			// $item['Barcode'] = '';
-			$total_tax = $item['Quantity'] * $item['TaxPaid'];
+			$total_tax = round( ( ( $item['Quantity'] * $item['ItemCost'] ) * $tax_rate ), 2 );
 			$total_cost = $item['Quantity'] * $item['ItemCost'];
 
 			// (Decimal, Required) Total paid for this item including tax.
@@ -335,10 +335,6 @@ class Ticket_Services extends API_Request {
 			$request_object['TotalTickets'] += $item['Quantity'];
 			$request_object['TaxPaid']      += $total_tax;
 			$request_object['BookingCost']  += $total_cost;
-		}
-
-		if ( $tax_rate > 0.00 ) {
-			$request_object['TaxPaid'] = round( $request_object['BookingCost'] * $tax_rate, 2 );
 		}
 
 		// (Decimal, Required) Total deposit paid for the booking including tax.
@@ -413,24 +409,20 @@ class Ticket_Services extends API_Request {
 		}
 
 		foreach ( $new_items as $item ) {
-			$total_tax  = $item['Quantity'] * $item['TaxPaid'];
+
+			if ( isset( $item['taxRate'] ) && $item['taxRate'] > 0.00 ) {
+				$tax_rate = $item['taxRate'];
+			}
+
+			$total_tax = round( ( ( $item['Quantity'] * $item['ItemCost'] ) * $tax_rate ), 2 );
 			$total_cost = $item['Quantity'] * $item['ItemCost'];
 
 			$orig['TotalTickets'] += $item['Quantity'];
 			$orig['TaxPaid']      += $total_tax;
 			$orig['BookingCost']  += $total_cost;
-
-			if ( isset( $item['taxRate'] ) && $item['taxRate'] > 0.00 ) {
-				$tax_rate = $item['taxRate'];
-			}
 		}
 
 		$orig['Item'] = array_values( $new_items );
-
-		if ( isset( $tax_rate ) && $tax_rate > 0.00 ) {
-			$orig['TaxPaid'] = round( $tax_rate * $orig['BookingCost'], 2 );
-		}
-
  		$orig['TotalPaid'] = $orig['TaxPaid'] + $orig['BookingCost'];
 
 		return $orig;
