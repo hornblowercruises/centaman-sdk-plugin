@@ -285,6 +285,8 @@ class Ticket_Services extends API_Request {
 		// (Decimal, Required) The total booking cost excluding tax.
 		$request_object['BookingCost'] = 0.0;
 
+		$tax_rate = 0.00;
+
 		// (Array, Required) Array of ticket items.
 		$request_object['Item'] = array();
 
@@ -316,9 +318,13 @@ class Ticket_Services extends API_Request {
 				// 'CouponCode' => '',
 			) );
 
+			if ( isset( $item['taxRate'] ) && $item['taxRate'] > 0.00 ) {
+				$tax_rate = $item['taxRate'];
+			}
+
 			// (String) This will always be null for request, It is used for response.
 			// $item['Barcode'] = '';
-			$total_tax = $item['Quantity'] * $item['TaxPaid'];
+			$total_tax = round( ( ( $item['Quantity'] * $item['ItemCost'] ) * $tax_rate ), 2 );
 			$total_cost = $item['Quantity'] * $item['ItemCost'];
 
 			// (Decimal, Required) Total paid for this item including tax.
@@ -327,8 +333,8 @@ class Ticket_Services extends API_Request {
 			$request_object['Item'][] = $item;
 
 			$request_object['TotalTickets'] += $item['Quantity'];
-			$request_object['TaxPaid'] += $total_tax;
-			$request_object['BookingCost'] += $total_cost;
+			$request_object['TaxPaid']      += $total_tax;
+			$request_object['BookingCost']  += $total_cost;
 		}
 
 		// (Decimal, Required) Total deposit paid for the booking including tax.
@@ -373,8 +379,9 @@ class Ticket_Services extends API_Request {
 		) );
 
 		$orig['TotalTickets'] = 0;
-		$orig['TaxPaid'] = 0.0;
-		$orig['BookingCost'] = 0.0;
+		$orig['TaxPaid']      = 0.0;
+		$orig['BookingCost']  = 0.0;
+		$tax_rate             = 0.00;
 
 		$new_items = array();
 
@@ -402,16 +409,21 @@ class Ticket_Services extends API_Request {
 		}
 
 		foreach ( $new_items as $item ) {
-			$total_tax = $item['Quantity'] * $item['TaxPaid'];
+
+			if ( isset( $item['taxRate'] ) && $item['taxRate'] > 0.00 ) {
+				$tax_rate = $item['taxRate'];
+			}
+
+			$total_tax = round( ( ( $item['Quantity'] * $item['ItemCost'] ) * $tax_rate ), 2 );
 			$total_cost = $item['Quantity'] * $item['ItemCost'];
 
 			$orig['TotalTickets'] += $item['Quantity'];
-			$orig['TaxPaid'] += $total_tax;
-			$orig['BookingCost'] += $total_cost;
+			$orig['TaxPaid']      += $total_tax;
+			$orig['BookingCost']  += $total_cost;
 		}
 
 		$orig['Item'] = array_values( $new_items );
-		$orig['TotalPaid'] = $orig['TaxPaid'] + $orig['BookingCost'];
+ 		$orig['TotalPaid'] = $orig['TaxPaid'] + $orig['BookingCost'];
 
 		return $orig;
 	}
