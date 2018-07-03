@@ -1,5 +1,0 @@
-PyYAML
-boto3
-Fabric==1.14.0
-paramiko>=2.2.0
-GitPython==1.0.1
